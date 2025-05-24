@@ -1,2 +1,2 @@
 # CSI-25
-This repository contains all the assignment solutions
+This repository contains all the assignment solutions provided by Rahul.
