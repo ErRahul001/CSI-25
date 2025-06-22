@@ -1,0 +1,115 @@
+{
+    "name": "CopyAllAndSelectivePipeline",
+    "properties": {
+      "description": "Pipeline to copy all tables and selectively copy specific tables/columns",
+      "parameters": {
+        "SelectedTables": {
+          "type": "Array",
+          "defaultValue": []
+        },
+        "SelectiveMappings": {
+          "type": "Object",
+          "defaultValue": {}
+        }
+      },
+      "variables": {},
+      "activities": [
+        {
+          "name": "Lookup_AllTables",
+          "type": "Lookup",
+          "dependsOn": [],
+          "policy": { "timeout": "00:10:00", "retry": 1, "retryIntervalInSeconds": 30 },
+          "typeProperties": {
+            "source": {
+              "type": "SqlSource",
+              "sqlReaderQuery": "SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'"
+            },
+            "firstRowOnly": false
+          },
+          "linkedServiceName": { "referenceName": "SourceDB_LS", "type": "LinkedServiceReference" }
+        },
+        {
+          "name": "ForEach_Table",
+          "type": "ForEach",
+          "dependsOn": [ { "activity": "Lookup_AllTables", "dependencyConditions": ["Succeeded"] } ],
+          "typeProperties": {
+            "items": "@activity('Lookup_AllTables').output.value",
+            "batchCount": 5,
+            "activities": [
+              {
+                "name": "If_SelectOrFull",
+                "type": "IfCondition",
+                "dependsOn": [],
+                "typeProperties": {
+                  "expression": {
+                    "value": "@contains(pipeline().parameters.SelectedTables, item().TABLE_NAME)",
+                    "type": "Expression"
+                  },
+                  "ifTrueActivities": [
+                    {
+                      "name": "Copy_Selective",
+                      "type": "Copy",
+                      "typeProperties": {
+                        "source": {
+                          "type": "SqlSource",
+                          "sqlReaderQuery": "@string(pipeline().parameters.SelectiveMappings[item().TABLE_NAME].query)"
+                        },
+                        "sink": {
+                          "type": "SqlSink"
+                        }
+                      },
+                      "inputs": [
+                        {
+                          "referenceName": "SourceTable_DS",
+                          "type": "DatasetReference",
+                          "parameters": { "TableName": "@item().TABLE_NAME" }
+                        }
+                      ],
+                      "outputs": [
+                        {
+                          "referenceName": "TargetTable_DS",
+                          "type": "DatasetReference",
+                          "parameters": { "TableName": "@item().TABLE_NAME" }
+                        }
+                      ]
+                    }
+                  ],
+                  "ifFalseActivities": [
+                    {
+                      "name": "Copy_Full",
+                      "type": "Copy",
+                      "typeProperties": {
+                        "source": {
+                          "type": "SqlSource",
+                          "queryTimeout": "02:00:00"
+                        },
+                        "sink": {
+                          "type": "SqlSink"
+                        }
+                      },
+                      "inputs": [
+                        {
+                          "referenceName": "SourceTable_DS",
+                          "type": "DatasetReference",
+                          "parameters": { "TableName": "@item().TABLE_NAME" }
+                        }
+                      ],
+                      "outputs": [
+                        {
+                          "referenceName": "TargetTable_DS",
+                          "type": "DatasetReference",
+                          "parameters": { "TableName": "@item().TABLE_NAME" }
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "annotations": []
+    }
+  }
+  
