@@ -1,0 +1,28 @@
+{
+    "name": "week5df",
+    "id": "/subscriptions/c1b76f00-d5da-4086-ae89-cc3306af11bd/resourceGroups/csi/providers/Microsoft.DataFactory/factories/week5df",
+    "type": "Microsoft.DataFactory/factories",
+    "properties": {
+        "provisioningState": "Succeeded",
+        "createTime": "2025-06-22T07:37:23.8588182Z",
+        "version": "2018-06-01",
+        "factoryStatistics": {
+            "totalResourceCount": 0,
+            "maxAllowedResourceCount": 0,
+            "factorySizeInGbUnits": 0,
+            "maxAllowedFactorySizeInGbUnits": 0
+        },
+        "publicNetworkAccess": "Enabled"
+    },
+    "eTag": "\"cc00d39d-0000-2000-0000-6857b2b40000\"",
+    "location": "centralindia",
+    "identity": {
+        "type": "SystemAssigned",
+        "principalId": "e38f09ff-f2d5-4178-a06e-7b8316dbcd11",
+        "tenantId": "d8fb0dd4-993a-40fd-add2-0efe8f460407"
+    },
+    "tags": {
+        "rahuldf": "df"
+    },
+    "apiVersion": "2018-06-01"
+}
