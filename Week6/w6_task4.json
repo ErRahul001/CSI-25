@@ -1,0 +1,64 @@
+{
+    "name": "csi_monthly_pipeline",
+    "properties": {
+      "activities": [
+        {
+          "name": "IsLastSaturday",
+          "type": "IfCondition",
+          "typeProperties": {
+            "expression": {
+              "value": "@if(equals(formatDateTime(addDays(utcNow(), 7), 'MM'), formatDateTime(utcNow(), 'MM')), false, true)",
+              "type": "Expression"
+            },
+            "ifTrueActivities": [
+              {
+                "name": "RunMonthlyJob",
+                "type": "ExecutePipeline",
+                "typeProperties": {
+                  "pipeline": {
+                    "referenceName": "ActualMonthlyJob",
+                    "type": "PipelineReference"
+                  }
+                }
+              }
+            ],
+            "ifFalseActivities": []
+          }
+        }
+      ],
+      "annotations": [],
+      "parameters": {},
+      "variables": {},
+      "folder": {
+        "name": "pipelines"
+      }
+    }
+  }
+  {
+    "name": "SaturdayTrigger",
+    "properties": {
+      "type": "ScheduleTrigger",
+      "typeProperties": {
+        "recurrence": {
+          "frequency": "Week",
+          "interval": 1,
+          "startTime": "2025-06-29T10:02:36Z",
+          "timeZone": "India Standard Time",
+          "schedule": {
+            "weekDays": [
+              "Saturday"
+            ]
+          }
+        }
+      },
+      "pipelines": [
+        {
+          "pipelineReference": {
+            "referenceName": "MonthlyReportPipeline",
+            "type": "PipelineReference"
+          }
+        }
+      ]
+    }
+  }
+    

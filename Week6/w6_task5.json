@@ -1,0 +1,113 @@
+{
+    "name": "CopyWithRetryPipeline",
+    "properties": {
+      "activities": [
+        {
+          "name": "CopySourceToTarget",
+          "type": "Copy",
+          "typeProperties": {
+            "source": {
+              "type": "DelimitedTextSource"
+            },
+            "sink": {
+              "type": "AzureSqlSink"
+            }
+          },
+          "inputs": [
+            {
+              "referenceName": "SourceDataset",
+              "type": "DatasetReference"
+            }
+          ],
+          "outputs": [
+            {
+              "referenceName": "SinkDataset",
+              "type": "DatasetReference"
+            }
+          ],
+          "policy": {
+            "timeout": "00:10:00",
+            "retry": 3,
+            "retryIntervalInSeconds": 5,
+            "secureInput": false,
+            "secureOutput": false
+          },
+          "dependsOn": []
+        },
+        {
+          "name": "CopyFailedHandler",
+          "type": "IfCondition",
+          "dependsOn": [
+            {
+              "activity": "CopySourceToTarget",
+              "dependencyConditions": [
+                "Failed"
+              ]
+            }
+          ],
+          "typeProperties": {
+            "expression": {
+              "value": "true",
+              "type": "Expression"
+            },
+            "ifTrueActivities": [
+              {
+                "name": "WaitBeforeRetry",
+                "type": "Wait",
+                "typeProperties": {
+                  "waitTimeInSeconds": 10
+                }
+              },
+              {
+                "name": "RetryCopyTask",
+                "type": "Copy",
+                "typeProperties": {
+                  "source": {
+                    "type": "DelimitedTextSource"
+                  },
+                  "sink": {
+                    "type": "AzureSqlSink"
+                  }
+                },
+                "inputs": [
+                  {
+                    "referenceName": "SourceDataset",
+                    "type": "DatasetReference"
+                  }
+                ],
+                "outputs": [
+                  {
+                    "referenceName": "SinkDataset",
+                    "type": "DatasetReference"
+                  }
+                ],
+                "policy": {
+                  "timeout": "00:10:00",
+                  "retry": 2,
+                  "retryIntervalInSeconds": 10,
+                  "secureInput": false,
+                  "secureOutput": false
+                },
+                "dependsOn": [
+                  {
+                    "activity": "WaitBeforeRetry",
+                    "dependencyConditions": [
+                      "Succeeded"
+                    ]
+                  }
+                ]
+              }
+            ],
+            "ifFalseActivities": []
+          }
+        }
+      ],
+      "annotations": [],
+      "parameters": {},
+      "variables": {},
+      "folder": {
+        "name": "pipelines"
+      }
+    }
+  }
+  

@@ -1,0 +1,138 @@
+{
+    "name": "csi_il_pipeline",
+    "properties": {
+      "activities": [
+        {
+          "name": "LookupLastWatermark",
+          "type": "Lookup",
+          "dependsOn": [],
+          "policy": {
+            "timeout": "7.00:00:00",
+            "retry": 0,
+            "retryIntervalInSeconds": 30,
+            "secureOutput": false,
+            "secureInput": false
+          },
+          "userProperties": [],
+          "typeProperties": {
+            "source": {
+              "type": "SqlSource",
+              "sqlReaderQuery": "SELECT MAX(LastLoadedTime) AS LastWatermark FROM ControlTable"
+            },
+            "dataset": {
+              "referenceName": "ControlTableDataset",
+              "type": "DatasetReference"
+            },
+            "firstRowOnly": true
+          }
+        },
+        {
+          "name": "CopyIncrementalData",
+          "type": "Copy",
+          "dependsOn": [
+            {
+              "activity": "LookupLastWatermark",
+              "dependencyConditions": [
+                "Succeeded"
+              ]
+            }
+          ],
+          "policy": {
+            "timeout": "7.00:00:00",
+            "retry": 0,
+            "retryIntervalInSeconds": 30,
+            "secureOutput": false,
+            "secureInput": false
+          },
+          "userProperties": [],
+          "typeProperties": {
+            "source": {
+              "type": "SqlSource",
+              "sqlReaderQuery": {
+                "value": "SELECT * FROM SourceTable WHERE LastModifiedDate > '@{activity('LookupLastWatermark').output.firstRow.LastWatermark}'",
+                "type": "Expression"
+              }
+            },
+            "sink": {
+              "type": "SqlSink"
+            }
+          },
+          "inputs": [
+            {
+              "referenceName": "SourceDataset",
+              "type": "DatasetReference"
+            }
+          ],
+          "outputs": [
+            {
+              "referenceName": "SinkDataset",
+              "type": "DatasetReference"
+            }
+          ]
+        },
+        {
+          "name": "UpdateWatermark",
+          "type": "SqlServerStoredProcedure",
+          "dependsOn": [
+            {
+              "activity": "CopyIncrementalData",
+              "dependencyConditions": [
+                "Succeeded"
+              ]
+            }
+          ],
+          "policy": {
+            "timeout": "7.00:00:00",
+            "retry": 0,
+            "retryIntervalInSeconds": 30,
+            "secureOutput": false,
+            "secureInput": false
+          },
+          "userProperties": [],
+          "typeProperties": {
+            "storedProcedureName": "sp_UpdateWatermark",
+            "storedProcedureParameters": {
+              "NewWatermark": {
+                "value": "@{activity('LookupLastWatermark').output.firstRow.LastWatermark}",
+                "type": "Expression"
+              }
+            }
+          },
+          "linkedServiceName": {
+            "referenceName": "AzureSqlLinkedService",
+            "type": "LinkedServiceReference"
+          }
+        }
+      ],
+      "annotations": [],
+      "parameters": {},
+      "variables": {},
+      "runtimeConfiguration": {},
+      "folder": {
+        "name": "pipelines"
+      }
+    }
+  }
+  {
+    "name": "DailyTrigger",
+    "properties": {
+      "type": "ScheduleTrigger",
+      "typeProperties": {
+        "recurrence": {
+          "frequency": "Day",
+          "interval": 1,
+          "startTime": "2025-06-29T09:59:28.381141Z",
+          "timeZone": "India Standard Time"
+        }
+      },
+      "pipelines": [
+        {
+          "pipelineReference": {
+            "referenceName": "IncrementalLoadPipeline",
+            "type": "PipelineReference"
+          }
+        }
+      ]
+    }
+  }
+    

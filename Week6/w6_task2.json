@@ -1,0 +1,100 @@
+{
+    "name": "SFTPLinkedService",
+    "properties": {
+        "type": "Sftp",
+        "typeProperties": {
+            "host": "sftp.example.com",
+            "port": 22,
+            "authenticationType": "Basic",
+            "userName": "Rahul",
+            "password": {
+                "type": "SecureString",
+                "value": "Rahul@1234"
+            }
+        }
+    }
+}
+{
+    "name": "AzureBlobStorageLinkedService",
+    "properties": {
+        "type": "AzureBlobStorage",
+        "typeProperties": {
+            "connectionString": "DefaultEndpointsProtocol=https;AccountName=youraccount;AccountKey=yourkey;EndpointSuffix=core.windows.net"
+        }
+    }
+}
+{
+    "name": "AzureSqlDBLinkedService",
+    "properties": {
+        "type": "AzureSqlDatabase",
+        "typeProperties": {
+            "connectionString": "Server=tcp:your-server.database.windows.net,1433;Initial Catalog=your-db;User ID=your-user;Password=your-password;Encrypt=True;"
+        }
+    }
+}
+{
+    "name": "SFTPInputDataset",
+    "properties": {
+        "linkedServiceName": {
+            "referenceName": "SFTPLinkedService",
+            "type": "LinkedServiceReference"
+        },
+        "type": "DelimitedText",
+        "typeProperties": {
+            "location": {
+                "type": "FileServerLocation",
+                "folderPath": "/path/to/csi",
+                "fileName": "customers.csv"
+            },
+            "columnDelimiter": ",",
+            "escapeChar": "\\",
+            "quoteChar": "\"",
+            "firstRowAsHeader": true
+        }
+    }
+}
+{
+    "name": "AzureSqlOutputDataset",
+    "properties": {
+        "linkedServiceName": {
+            "referenceName": "AzureSqlDBLinkedService",
+            "type": "LinkedServiceReference"
+        },
+        "type": "AzureSqlTable",
+        "typeProperties": {
+            "tableName": "target_table"
+        }
+    }
+}
+{
+    "name": "CopySFTPToAzureSQL",
+    "properties": {
+        "activities": [
+            {
+                "name": "CopyFromSFTP",
+                "type": "Copy",
+                "inputs": [
+                    {
+                        "referenceName": "SFTPInputDataset",
+                        "type": "DatasetReference"
+                    }
+                ],
+                "outputs": [
+                    {
+                        "referenceName": "AzureSqlOutputDataset",
+                        "type": "DatasetReference"
+                    }
+                ],
+                "typeProperties": {
+                    "source": {
+                        "type": "DelimitedTextSource",
+                        "skipLineCount": 0
+                    },
+                    "sink": {
+                        "type": "SqlSink"
+                    }
+                }
+            }
+        ]
+    }
+}

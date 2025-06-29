@@ -1,0 +1,129 @@
+{
+    "name": "SelfHostedIR",
+    "properties": {
+      "type": "SelfHosted",
+      "typeProperties": {}
+    }
+  }
+  {
+    "name": "LS_OnPrem_SQL",
+    "properties": {
+      "type": "SqlServer",
+      "typeProperties": {
+        "connectionString": "Server=YOUR_LOCAL_SERVER;Database=YOUR_DB_NAME;",
+        "userName": "rahul",
+        "password": {
+          "type": "SecureString",
+          "value": "Rahul@1234"
+        }
+      },
+      "connectVia": {
+        "referenceName": "SelfHostedIR",
+        "type": "IntegrationRuntimeReference"
+      }
+    }
+  }
+  {
+    "name": "LS_AzureSQL",
+    "properties": {
+      "type": "AzureSqlDatabase",
+      "typeProperties": {
+        "connectionString": "Server=tcp:YOUR_AZURE_SQL_SERVER.database.windows.net,1433;Initial Catalog=YOUR_DB_NAME;",
+        "userName": "rahul",
+        "password": {
+          "type": "SecureString",
+          "value": "Rahul@123"
+        }
+      }
+    }
+  }
+  {
+    "name": "DS_OnPremSQLTable",
+    "properties": {
+      "linkedServiceName": {
+        "referenceName": "LS_OnPrem_SQL",
+        "type": "LinkedServiceReference"
+      },
+      "type": "SqlServerTable",
+      "typeProperties": {
+        "tableName": "[dbo].[customers]"
+      }
+    }
+  }
+  {
+    "name": "DS_AzureSQLTable",
+    "properties": {
+      "linkedServiceName": {
+        "referenceName": "LS_AzureSQL",
+        "type": "LinkedServiceReference"
+      },
+      "type": "AzureSqlTable",
+      "typeProperties": {
+        "tableName": "[dbo].[cutomer_id]"
+      }
+    }
+  }
+  {
+    "name": "PL_CopyOnPremToAzureSQL",
+    "properties": {
+      "activities": [
+        {
+          "name": "CopyLocalToAzureSQL",
+          "type": "Copy",
+          "dependsOn": [],
+          "policy": {
+            "timeout": "7.00:00:00",
+            "retry": 0,
+            "retryIntervalInSeconds": 30,
+            "secureOutput": false,
+            "secureInput": false
+          },
+          "userProperties": [],
+          "typeProperties": {
+            "source": {
+              "type": "SqlSource"
+            },
+            "sink": {
+              "type": "SqlSink"
+            }
+          },
+          "inputs": [
+            {
+              "referenceName": "DS_OnPremSQLTable",
+              "type": "DatasetReference"
+            }
+          ],
+          "outputs": [
+            {
+              "referenceName": "DS_AzureSQLTable",
+              "type": "DatasetReference"
+            }
+          ]
+        }
+      ]
+    }
+  }
+  {
+    "name": "TR_DailyRun",
+    "properties": {
+      "type": "ScheduleTrigger",
+      "typeProperties": {
+        "recurrence": {
+          "frequency": "Day",
+          "interval": 1,
+          "startTime": "2025-06-29T00:00:00Z",
+          "timeZone": "India Standard Time"
+        }
+      },
+      "pipelines": [
+        {
+          "pipelineReference": {
+            "referenceName": "PL_CopyOnPremToAzureSQL",
+            "type": "PipelineReference"
+          }
+        }
+      ]
+    }
+  }
+    
+  
