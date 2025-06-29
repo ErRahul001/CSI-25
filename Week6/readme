@@ -1,0 +1,15 @@
+task 1: Configure Self-hosted Integration Runtime to Extract Data from Local Server and Load into Azure SQL Database: Set up a Self-hosted Integration Runtime (SHIR)
+in Azure Data Factory to securely connect to an on-premises server. Extract data from the local environment and load it into an Azure SQL Database to enable
+cloud-based analytics and processing.
+
+task 2: Configure FTP/SFTP Server and Create an ADF Pipeline for Data Extraction: Set up access to FTP/SFTP servers and build a pipeline in Azure Data Factory 
+to extract files or datasets from these sources. This facilitates integration with external systems or partners.
+
+task 3: Create Incremental Load Pipeline and Automate This on a Daily Basis: Design an ADF pipeline to perform incremental data loads using techniques like 
+watermarking or change tracking. Schedule this pipeline to run daily to ensure only new or modified records are processed, optimizing performance and reducing load.
+
+task 4: Automate a Pipeline to Trigger Every Last Saturday of the Month: Configure a custom time-based trigger in Azure Data Factory to run the pipeline on the last
+Saturday of each month. This supports periodic reporting and batch processing without manual intervention.
+
+task 5: Retrieving data. Wait a few seconds and try to cut or copy again: Implement logic to handle data retrieval failures gracefully by waiting briefly
+(e.g., a few seconds) before retrying cut, copy, or extraction operations, improving pipeline resilience and reducing transient error impacts.
