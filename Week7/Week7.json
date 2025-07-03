@@ -1,0 +1,191 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+      "factoryName": {
+        "type": "string",
+        "defaultValue": "rahulcsidf"
+      },
+      "storageAccountName": {
+        "type": "string",
+        "defaultValue": "rahulstoragecsi"
+      }
+    },
+    "resources": [
+      {
+        "type": "Microsoft.DataFactory/factories/linkedservices",
+        "apiVersion": "2018-06-01",
+        "name": "[concat(parameters('factoryName'), '/AzureBlobStorageLinkedService')]",
+        "properties": {
+          "type": "AzureBlobStorage",
+          "typeProperties": {
+            "connectionString": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('storageAccountName'), ';EndpointSuffix=core.windows.net')]"
+          }
+        }
+      },
+      {
+        "type": "Microsoft.DataFactory/factories/datasets",
+        "apiVersion": "2018-06-01",
+        "name": "[concat(parameters('factoryName'), '/input]",
+        "properties": {
+          "linkedServiceName": {
+            "referenceName": "AzureBlobStorageLinkedService",
+            "type": "LinkedServiceReference"
+          },
+          "type": "Binary",
+          "typeProperties": {
+            "location": {
+              "type": "AzureBlobStorageLocation",
+              "folderPath": "input",
+              "container": "rahulcontainer"
+            }
+          }
+        }
+      },
+      {
+        "type": "Microsoft.DataFactory/factories/pipelines",
+        "apiVersion": "2018-06-01",
+        "name": "[concat(parameters('factoryName'), '/Daily_Truncate_Load_Pipeline')]",
+        "properties": {
+          "activities": [
+            {
+              "name": "GetFileList",
+              "type": "GetMetadata",
+              "dependsOn": [],
+              "policy": {
+                "timeout": "7.00:00:00",
+                "retry": 0,
+                "retryIntervalInSeconds": 30,
+                "secureOutput": false,
+                "secureInput": false
+              },
+              "typeProperties": {
+                "dataset": {
+                  "referenceName": "input",
+                  "type": "DatasetReference"
+                },
+                "fieldList": ["childItems"]
+              }
+            },
+            {
+              "name": "ForEachFile",
+              "type": "ForEach",
+              "dependsOn": [
+                {
+                  "activity": "GetFileList",
+                  "dependencyConditions": ["Succeeded"]
+                }
+              ],
+              "typeProperties": {
+                "items": "@activity('GetFileList').output.childItems",
+                "activities": [
+                  {
+                    "name": "SwitchByFileType",
+                    "type": "Switch",
+                    "typeProperties": {
+                      "expression": {
+                        "value": "@if(startsWith(item().name, 'CUST_MSTR_'), 'CUST_MSTR', if(startsWith(item().name, 'master_child_export-'), 'MASTER_CHILD', if(equals(item().name, 'H_ECOM_ORDER.csv'), 'H_ECOM_ORDER', 'UNKNOWN')))",
+                        "type": "Expression"
+                      },
+                      "cases": [
+                        {
+                          "value": "CUST_MSTR",
+                          "activities": [
+                            {
+                              "name": "CopyCUST_MSTR",
+                              "type": "Copy",
+                              "typeProperties": {
+                                "source": {
+                                  "type": "DelimitedTextSource"
+                                },
+                                "sink": {
+                                  "type": "SqlSink",
+                                  "preCopyScript": "TRUNCATE TABLE CUST_MSTR;"
+                                }
+                              },
+                              "inputs": [
+                                {
+                                  "referenceName": "CUST_MSTR_Input",
+                                  "type": "DatasetReference"
+                                }
+                              ],
+                              "outputs": [
+                                {
+                                  "referenceName": "CUST_MSTR_Output",
+                                  "type": "DatasetReference"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "value": "MASTER_CHILD",
+                          "activities": [
+                            {
+                              "name": "CopyMASTER_CHILD",
+                              "type": "Copy",
+                              "typeProperties": {
+                                "source": {
+                                  "type": "DelimitedTextSource"
+                                },
+                                "sink": {
+                                  "type": "SqlSink",
+                                  "preCopyScript": "TRUNCATE TABLE master_child;"
+                                }
+                              },
+                              "inputs": [
+                                {
+                                  "referenceName": "MasterChild_Input",
+                                  "type": "DatasetReference"
+                                }
+                              ],
+                              "outputs": [
+                                {
+                                  "referenceName": "MasterChild_Output",
+                                  "type": "DatasetReference"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "value": "H_ECOM_ORDER",
+                          "activities": [
+                            {
+                              "name": "CopyH_ECOM_ORDER",
+                              "type": "Copy",
+                              "typeProperties": {
+                                "source": {
+                                  "type": "DelimitedTextSource"
+                                },
+                                "sink": {
+                                  "type": "SqlSink",
+                                  "preCopyScript": "TRUNCATE TABLE H_ECOM_Orders;"
+                                }
+                              },
+                              "inputs": [
+                                {
+                                  "referenceName": "HECOM_Input",
+                                  "type": "DatasetReference"
+                                }
+                              ],
+                              "outputs": [
+                                {
+                                  "referenceName": "HECOM_Output",
+                                  "type": "DatasetReference"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
